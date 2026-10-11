@@ -1,0 +1,67 @@
+/* ============ Admin shell ============ */
+.admin-app { min-height: 100vh; display: flex; background: var(--bg); }
+
+.a-sidebar {
+  position: sticky; top: 0; height: 100vh; width: 260px; flex-shrink: 0;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 18px 14px; background: var(--bg-2); border-right: 1px solid var(--border);
+}
+.a-sidebar-head { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; }
+.a-close { display: none; margin-left: auto; }
+
+.a-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.a-nav-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); padding: 14px 12px 6px; }
+.a-nav a { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; color: var(--text); font-weight: 600; font-size: 0.92rem; transition: background 0.15s, color 0.15s; }
+.a-nav a:hover { background: var(--surface); color: var(--text-h); }
+.a-nav a.active { background: var(--accent-soft); color: var(--accent); }
+
+.a-sidebar-foot { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); }
+.a-user { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.a-user strong { color: var(--text-h); font-size: 0.9rem; }
+.a-user span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.a-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.a-topbar { display: none; }
+.a-main { width: 100%; max-width: 1180px; margin: 0 auto; padding: 28px 32px 48px; }
+.a-backdrop { display: none; }
+
+@media (max-width: 960px) {
+  .a-sidebar { position: fixed; left: 0; z-index: 60; transform: translateX(-100%); transition: transform 0.25s ease; box-shadow: var(--shadow); }
+  .a-sidebar.open { transform: none; }
+  .a-close { display: inline-grid; }
+  .a-backdrop { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(3, 7, 15, 0.6); opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .a-backdrop.open { opacity: 1; pointer-events: auto; }
+  .a-topbar { display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 20; height: 58px; padding: 0 12px; background: rgba(7, 13, 26, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+  .a-main { padding: 20px 16px 40px; }
+}
+
+/* ============ Clients ============ */
+.client-cell { display: flex; align-items: center; gap: 12px; color: inherit; }
+.client-cell strong { color: var(--text-h); }
+.row-link:hover .client-cell strong { color: var(--accent); }
+
+.client-header { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 20px; border-radius: var(--radius-lg); background: radial-gradient(500px 200px at 100% 0%, rgba(255, 159, 46, 0.14), transparent 65%), var(--surface); border: 1px solid var(--border); }
+.client-header-info { flex: 1; min-width: 200px; }
+.client-header-info h1 { font-size: 1.4rem; margin-bottom: 4px; }
+
+.tabs { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--border); scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs a { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; color: var(--muted); font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; transition: color 0.15s; }
+.tabs a:hover { color: var(--text-h); }
+.tabs a.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ============ Deposit QR editor ============ */
+.qr-editor { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+.qr-editor-side { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.qr-editor + .form-grid { margin-top: 20px; }
+.dropzone { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 28px 16px; border-radius: var(--radius); border: 1.5px dashed var(--border-strong); background: var(--bg-2); color: var(--text-h); cursor: pointer; text-align: center; transition: border-color 0.15s, background 0.15s; }
+.dropzone:hover { border-color: var(--accent); background: var(--accent-soft); }
+.dropzone svg { color: var(--accent); }
+
+/* ============ Withdrawals ============ */
+.withdrawal-row { align-items: flex-start; flex-wrap: wrap; }
+.withdrawal-info { display: flex; flex-direction: column; gap: 4px; min-width: 220px; flex: 1; }
+.withdrawal-actions { display: flex; flex-direction: column; gap: 8px; min-width: 260px; }
+@media (max-width: 560px) {
+  .withdrawal-actions { min-width: 0; width: 100%; }
+}
