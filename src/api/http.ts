@@ -22,7 +22,8 @@ export function setUnauthorizedHandler(fn: () => void) {
 
 export async function request<T>(
   path: string,
-  options: { method?: string; body?: unknown } = {},
+  /** `blob: true` returns the raw body (e.g. an image) instead of parsing JSON. */
+  options: { method?: string; body?: unknown; blob?: boolean } = {},
 ): Promise<T> {
   const headers: Record<string, string> = {}
   const token = tokenStore.get()
@@ -56,5 +57,6 @@ export async function request<T>(
   }
 
   if (res.status === 204) return undefined as T
+  if (options.blob) return res.blob() as Promise<T>
   return res.json() as Promise<T>
 }

@@ -8,6 +8,8 @@ interface AuthState {
   loading: boolean
   login: (username: string, password: string) => Promise<User>
   register: (input: RegisterInput) => Promise<User>
+  /** Re-reads the logged-in user (e.g. after KYC is submitted). */
+  refreshUser: () => Promise<void>
   logout: () => void
 }
 
@@ -47,8 +49,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return res.user
   }, [])
 
+  const refreshUser = useCallback(async () => {
+    setUser(await api.auth.me())
+  }, [])
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, refreshUser, logout }}>
       {children}
     </AuthContext.Provider>
   )

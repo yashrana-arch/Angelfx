@@ -9,6 +9,7 @@ import { useAsync } from '../../hooks/useAsync'
 import { useSaver } from '../../hooks/useSaver'
 import type { NewClientInput } from '../../types'
 import { initials } from '../../utils/format'
+import { kycBadge } from '../../utils/status'
 
 const emptyForm: NewClientInput = { name: '', email: '', phone: '', clientCode: '', password: '' }
 
@@ -85,6 +86,7 @@ export default function Clients() {
                   <th>Client</th>
                   <th>User ID</th>
                   <th>Phone</th>
+                  <th>KYC</th>
                   <th>Status</th>
                   <th aria-label="Open" />
                 </tr>
@@ -103,6 +105,9 @@ export default function Clients() {
                     </td>
                     <td className="mono">{u.clientCode || '—'}</td>
                     <td>{u.phone || '—'}</td>
+                    <td>
+                      <span className={`chip ${kycBadge(u.kycStatus).chip}`}>{kycBadge(u.kycStatus).label}</span>
+                    </td>
                     <td>
                       <span className={`chip ${u.verified ? 'chip-up' : 'chip-warn'}`}>{u.verified ? 'Verified' : 'Pending'}</span>
                     </td>

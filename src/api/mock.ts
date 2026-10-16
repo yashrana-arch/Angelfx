@@ -7,6 +7,9 @@
  *   client -> client@veltrex.com (or AD89898HH) / client123
  */
 import type {
+  Kyc,
+  KycInput,
+  PaymentProof,
   LedgerEntry,
   MarketWatch,
   PaymentInfo,
@@ -31,6 +34,9 @@ interface DB {
   ledgers: Record<string, LedgerEntry[]>
   payment: PaymentInfo
   withdrawals: Record<string, Withdrawal[]>
+  kyc: Record<string, Kyc>
+  /** Newest first. The mock keeps the image as a data URL. */
+  proofs: (PaymentProof & { dataUrl: string })[]
 }
 
 const DB_KEY = 'veltrex_mock_db_v3'
@@ -124,6 +130,8 @@ function seed(): DB {
       ifscCode: '',
       note: '',
     },
+    kyc: {},
+    proofs: [],
     withdrawals: {
       u_client: [
         { id: 'w1', amount: 5000, accountDetails: 'shiv@okaxis', status: 'APPROVED', adminNote: 'Paid', createdAt: daysAgo(6) },
@@ -134,7 +142,12 @@ function seed(): DB {
 
 function load(): DB {
   const raw = localStorage.getItem(DB_KEY)
-  if (raw) return JSON.parse(raw) as DB
+  if (raw) {
+    const db = JSON.parse(raw) as DB
+    db.kyc ??= {} // added after v3 was seeded
+    db.proofs ??= []
+    return db
+  }
   const db = seed()
   save(db)
   return db
@@ -150,8 +163,8 @@ function save(db: DB) {
 
 const delay = <T>(value: T) => new Promise<T>((r) => setTimeout(() => r(value), 200))
 const uid = () => Math.random().toString(36).slice(2, 10)
-const publicUser = ({ id, name, email, phone, role, clientCode, verified }: StoredUser): User => ({
-  id, name, email, phone, role, clientCode, verified,
+const publicUser = ({ id, name, email, phone, role, clientCode, verified, kycStatus }: StoredUser): User => ({
+  id, name, email, phone, role, clientCode, verified, kycStatus: kycStatus ?? null,
 })
 
 function currentUser(db: DB, role?: Role): StoredUser {
@@ -167,6 +180,24 @@ function getClient(db: DB, userId: string): StoredUser {
   const user = db.users.find((u) => u.id === userId && u.role === 'client')
   if (!user) throw new ApiError(404, 'Client not found')
   return user
+}
+
+/** Same clean-up the API does: strip spaces from numbers, upper-case codes. */
+const normalizeKyc = (i: KycInput): KycInput => ({
+  ...i,
+  phone: i.phone.replace(/[\s-]/g, ''),
+  accountNumber: i.accountNumber.replace(/[\s-]/g, ''),
+  aadhaarNumber: i.aadhaarNumber.replace(/[\s-]/g, ''),
+  ifscCode: i.ifscCode.trim().toUpperCase(),
+  panNumber: i.panNumber.trim().toUpperCase(),
+})
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const publicProof = ({ dataUrl, ...p }: DB['proofs'][number]): PaymentProof => p
+
+async function proofImage(p: DB['proofs'][number] | undefined): Promise<Blob> {
+  if (!p) throw new ApiError(404, 'Screenshot not found')
+  return (await fetch(p.dataUrl)).blob()
 }
 
 const fileToDataUrl = (file: File) =>
@@ -247,6 +278,56 @@ export const mockApi: Api = {
       save(db)
       return delay(w)
     },
+    async getPaymentProofs() {
+      const db = load()
+      const user = currentUser(db, 'client')
+      return delay(db.proofs.filter((p) => p.userId === user.id).map(publicProof))
+    },
+    async uploadPaymentProof({ image, amount, reference }) {
+      const db = load()
+      const user = currentUser(db, 'client')
+      if (!image.type.startsWith('image/')) throw new ApiError(400, 'Please upload a PNG, JPG, WEBP or GIF image')
+      if (image.size > 5 * 1024 * 1024) throw new ApiError(400, 'Image must be under 5 MB')
+      const proof = {
+        id: uid(),
+        userId: user.id,
+        clientName: user.name,
+        clientCode: user.clientCode ?? null,
+        amount: amount ?? null,
+        reference: reference?.trim() ?? '',
+        fileName: image.name,
+        fileSize: image.size,
+        status: 'PENDING' as const,
+        adminNote: '',
+        createdAt: new Date().toISOString(),
+        reviewedAt: null,
+        dataUrl: await fileToDataUrl(image),
+      }
+      db.proofs.unshift(proof)
+      save(db)
+      return delay(publicProof(proof))
+    },
+    async getPaymentProofImage(proofId) {
+      const db = load()
+      const user = currentUser(db, 'client')
+      return proofImage(db.proofs.find((p) => p.id === proofId && p.userId === user.id))
+    },
+    async getKyc() {
+      const db = load()
+      return delay(db.kyc[currentUser(db, 'client').id] ?? null)
+    },
+    async submitKyc(input) {
+      const db = load()
+      const user = currentUser(db, 'client')
+      if (db.kyc[user.id]?.status === 'APPROVED') {
+        throw new ApiError(409, 'Your KYC is already approved. Contact support to change your details.')
+      }
+      const kyc: Kyc = { ...normalizeKyc(input), status: 'SUBMITTED', adminNote: '', submittedAt: new Date().toISOString(), reviewedAt: null }
+      db.kyc[user.id] = kyc
+      user.kycStatus = kyc.status
+      save(db)
+      return delay(kyc)
+    },
     async changePassword(currentPassword, newPassword) {
       const db = load()
       const user = currentUser(db, 'client')
@@ -293,6 +374,65 @@ export const mockApi: Api = {
       if (password) user.password = password
       save(db)
       return delay(publicUser(user))
+    },
+
+    async listPaymentProofs(status) {
+      const db = load()
+      currentUser(db, 'admin')
+      return delay(db.proofs.filter((p) => !status || p.status === status).map(publicProof))
+    },
+    async getPaymentProofs(userId) {
+      const db = load()
+      getClient(db, userId)
+      return delay(db.proofs.filter((p) => p.userId === userId).map(publicProof))
+    },
+    async getPaymentProofImage(userId, proofId) {
+      const db = load()
+      getClient(db, userId)
+      return proofImage(db.proofs.find((p) => p.id === proofId && p.userId === userId))
+    },
+    async updatePaymentProof(userId, proofId, status, adminNote) {
+      const db = load()
+      getClient(db, userId)
+      const p = db.proofs.find((x) => x.id === proofId && x.userId === userId)
+      if (!p) throw new ApiError(404, 'Screenshot not found')
+      p.status = status
+      p.adminNote = adminNote.trim()
+      p.reviewedAt = status === 'PENDING' ? null : new Date().toISOString()
+      save(db)
+      return delay(publicProof(p))
+    },
+
+    async getKyc(userId) {
+      const db = load()
+      getClient(db, userId)
+      return delay(db.kyc[userId] ?? null)
+    },
+    async saveKyc(userId, input) {
+      const db = load()
+      const user = getClient(db, userId)
+      const prev = db.kyc[userId]
+      const kyc: Kyc = prev
+        ? { ...prev, ...normalizeKyc(input) }
+        : { ...normalizeKyc(input), status: 'SUBMITTED', adminNote: '', submittedAt: new Date().toISOString(), reviewedAt: null }
+      db.kyc[userId] = kyc
+      user.kycStatus = kyc.status
+      save(db)
+      return delay(kyc)
+    },
+    async setKycStatus(userId, status, adminNote) {
+      const db = load()
+      const user = getClient(db, userId)
+      const kyc = db.kyc[userId]
+      if (!kyc) throw new ApiError(400, "This client hasn't submitted KYC details yet")
+      kyc.status = status
+      kyc.adminNote = adminNote.trim()
+      kyc.reviewedAt = status === 'SUBMITTED' ? null : new Date().toISOString()
+      user.kycStatus = status
+      if (status === 'APPROVED') user.verified = true
+      if (status === 'REJECTED') user.verified = false
+      save(db)
+      return delay({ ...kyc })
     },
 
     async getPortfolio(userId) {

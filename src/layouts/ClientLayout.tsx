@@ -1,5 +1,5 @@
-import { Briefcase, ChartCandlestick, ChartLine, User } from 'lucide-react'
-import { Link, NavLink, Outlet } from 'react-router'
+import { ArrowRight, Briefcase, ChartCandlestick, ChartLine, ShieldAlert, User } from 'lucide-react'
+import { Link, NavLink, Outlet, useLocation } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
 import Logo from '../components/Logo'
 import { initials } from '../utils/format'
@@ -14,6 +14,9 @@ const NAV = [
 
 export default function ClientLayout() {
   const { user } = useAuth()
+  const { pathname } = useLocation()
+  // Nudge until KYC is submitted (or after it's rejected); hidden on the KYC page itself.
+  const kycNudge = user && (!user.kycStatus || user.kycStatus === 'REJECTED') && pathname !== '/client/kyc'
 
   return (
     <div className="client-app">
@@ -36,6 +39,22 @@ export default function ClientLayout() {
       </header>
 
       <main className="c-container c-main">
+        {kycNudge && (
+          <Link to="/client/kyc" className="kyc-banner">
+            <span className="kyc-banner-icon">
+              <ShieldAlert size={20} />
+            </span>
+            <span className="kyc-banner-text">
+              <strong>{user.kycStatus === 'REJECTED' ? 'Your KYC needs changes' : 'Complete your KYC'}</strong>
+              <span>
+                {user.kycStatus === 'REJECTED'
+                  ? 'We couldn’t verify your details. Tap to review and resubmit.'
+                  : 'Verify your identity in 2 minutes to get your account fully activated.'}
+              </span>
+            </span>
+            <ArrowRight size={18} className="kyc-banner-arrow" />
+          </Link>
+        )}
         <Outlet />
       </main>
 

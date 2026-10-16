@@ -6,11 +6,17 @@
  */
 import type {
   ClientUpdate,
+  Kyc,
+  KycInput,
+  KycStatus,
   LedgerEntry,
   LoginResponse,
   MarketWatch,
   NewClientInput,
   PaymentInfo,
+  PaymentProof,
+  PaymentProofStatus,
+  PaymentProofUpload,
   PaymentUpdate,
   Portfolio,
   RegisterInput,
@@ -59,6 +65,22 @@ export const backendApi = {
         method: 'POST',
         body: { currentPassword, newPassword },
       }),
+    getPaymentProofs: () => request<PaymentProof[]>('/client/payment-proofs'),
+    // POST multipart/form-data: image (file), amount?, reference?
+    uploadPaymentProof: ({ image, amount, reference }: PaymentProofUpload) => {
+      const form = new FormData()
+      form.append('image', image)
+      if (amount) form.append('amount', String(amount))
+      if (reference) form.append('reference', reference)
+      return request<PaymentProof>('/client/payment-proofs', { method: 'POST', body: form })
+    },
+    getPaymentProofImage: (proofId: string) =>
+      request<Blob>(`/client/payment-proofs/${proofId}/image`, { blob: true }),
+
+    // GET returns 204 (-> null) until the client has submitted KYC.
+    getKyc: () => request<Kyc | undefined>('/client/kyc').then((k) => k ?? null),
+    // Submits or re-submits; puts the KYC back into review.
+    submitKyc: (input: KycInput) => request<Kyc>('/client/kyc', { method: 'PUT', body: input }),
   },
 
   admin: {
@@ -71,6 +93,26 @@ export const backendApi = {
       request<User>('/admin/users', { method: 'POST', body: input }),
     updateUser: (userId: string, input: ClientUpdate) =>
       request<User>(`/admin/users/${userId}`, { method: 'PUT', body: input }),
+
+    // All clients' screenshots, newest first; pass a status for the review queue.
+    listPaymentProofs: (status?: PaymentProofStatus) =>
+      request<PaymentProof[]>(`/admin/payment-proofs${status ? `?status=${status}` : ''}`),
+    getPaymentProofs: (userId: string) => request<PaymentProof[]>(`/admin/users/${userId}/payment-proofs`),
+    getPaymentProofImage: (userId: string, proofId: string) =>
+      request<Blob>(`/admin/users/${userId}/payment-proofs/${proofId}/image`, { blob: true }),
+    // Approving doesn't credit the ledger; the admin does that on the Ledger tab.
+    updatePaymentProof: (userId: string, proofId: string, status: PaymentProofStatus, adminNote: string) =>
+      request<PaymentProof>(`/admin/users/${userId}/payment-proofs/${proofId}`, {
+        method: 'PUT',
+        body: { status, adminNote },
+      }),
+
+    getKyc: (userId: string) => request<Kyc | undefined>(`/admin/users/${userId}/kyc`).then((k) => k ?? null),
+    saveKyc: (userId: string, input: KycInput) =>
+      request<Kyc>(`/admin/users/${userId}/kyc`, { method: 'PUT', body: input }),
+    // APPROVED also marks the client verified; REJECTED un-verifies.
+    setKycStatus: (userId: string, status: KycStatus, adminNote: string) =>
+      request<Kyc>(`/admin/users/${userId}/kyc/status`, { method: 'PUT', body: { status, adminNote } }),
 
     getPortfolio: (userId: string) => request<Portfolio>(`/admin/users/${userId}/portfolio`),
     updatePortfolio: (userId: string, portfolio: Portfolio) =>

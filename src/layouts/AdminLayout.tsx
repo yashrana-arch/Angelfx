@@ -1,4 +1,4 @@
-import { ChartCandlestick, ExternalLink, Landmark, LogOut, Menu, Users, X } from 'lucide-react'
+import { ChartCandlestick, ExternalLink, Landmark, LogOut, Menu, Receipt, Users, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
@@ -10,6 +10,7 @@ const NAV = [
   { to: '/admin', label: 'Clients', icon: Users, end: false },
   { to: '/admin/market', label: 'Market Watch', icon: ChartCandlestick, end: true },
   { to: '/admin/payment', label: 'Deposit Details', icon: Landmark, end: true },
+  { to: '/admin/payment-proofs', label: 'Payment Proofs', icon: Receipt, end: true },
 ]
 
 export default function AdminLayout() {

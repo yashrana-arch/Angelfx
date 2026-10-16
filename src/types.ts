@@ -9,6 +9,69 @@ export interface User {
   /** Broker-style client ID shown on the profile, e.g. AD89898HH. */
   clientCode?: string
   verified?: boolean
+  /** null until the client submits their KYC details. */
+  kycStatus?: KycStatus | null
+}
+
+/* ---------- Payment proofs (deposit screenshots) ---------- */
+
+export type PaymentProofStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
+/** Metadata only; load the image with getPaymentProofImage. */
+export interface PaymentProof {
+  id: string
+  userId: string
+  clientName: string
+  clientCode: string | null
+  amount: number | null
+  reference: string
+  fileName: string
+  fileSize: number
+  status: PaymentProofStatus
+  adminNote: string
+  createdAt: string // ISO datetime
+  reviewedAt: string | null
+}
+
+export interface PaymentProofUpload {
+  image: File
+  amount?: number
+  /** UTR / UPI transaction reference. */
+  reference?: string
+}
+
+/* ---------- KYC ---------- */
+
+export type KycStatus = 'SUBMITTED' | 'APPROVED' | 'REJECTED'
+
+/** What the client (or admin) fills in on the KYC form. */
+export interface KycInput {
+  // Personal details
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  dateOfBirth: string // yyyy-mm-dd
+  // Address
+  addressLine: string
+  city: string
+  state: string
+  nationality: string
+  // Bank account
+  bankName: string
+  accountHolderName: string
+  accountNumber: string
+  ifscCode: string
+  // Documents
+  aadhaarNumber: string
+  panNumber: string
+}
+
+export interface Kyc extends KycInput {
+  status: KycStatus
+  adminNote: string
+  submittedAt: string // ISO datetime
+  reviewedAt: string | null
 }
 
 export interface LoginResponse {

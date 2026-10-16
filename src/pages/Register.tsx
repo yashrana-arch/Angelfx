@@ -20,7 +20,8 @@ export default function Register() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  if (user) return <Navigate to={homeFor(user.role)} replace />
+  // While submitting, handleSubmit does the redirect (to KYC), so don't race it.
+  if (user && !submitting) return <Navigate to={homeFor(user.role)} replace />
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -36,7 +37,8 @@ export default function Register() {
         phone: phone.trim() || undefined,
         password,
       })
-      navigate(homeFor(created.role), { replace: true })
+      // New clients go straight to KYC; they can skip it and finish later from their profile.
+      navigate(created.role === 'client' ? '/client/kyc' : homeFor(created.role), { replace: true, state: { welcome: true } })
     } catch (err) {
       setError(errorMessage(err, 'Could not create account'))
       setSubmitting(false)

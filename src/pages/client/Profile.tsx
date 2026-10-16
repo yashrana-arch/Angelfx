@@ -3,6 +3,7 @@ import {
   ArrowUpFromLine,
   BadgeCheck,
   BookOpen,
+  FileCheck2,
   ChevronRight,
   Clock,
   KeyRound,
@@ -18,6 +19,7 @@ import { useAuth } from '../../auth/AuthContext'
 import PageHeader from '../../components/PageHeader'
 import { useAsync } from '../../hooks/useAsync'
 import { formatINR, initials } from '../../utils/format'
+import { kycBadge } from '../../utils/status'
 
 export default function Profile() {
   const { user, logout } = useAuth()
@@ -69,6 +71,12 @@ export default function Profile() {
               <span className="chip chip-warn">Pending</span>
             )
           }
+        />
+        <MenuRow
+          to="/client/kyc"
+          icon={<FileCheck2 size={18} />}
+          label="KYC details"
+          value={<span className={`chip ${kycBadge(user.kycStatus).chip}`}>{kycBadge(user.kycStatus).label}</span>}
         />
         {user.clientCode && <MenuRow icon={<UserIcon size={18} />} label="User ID" value={user.clientCode} />}
         <MenuRow icon={<Mail size={18} />} label="Email" value={user.email} />
