@@ -40,6 +40,39 @@ export interface PaymentProofUpload {
   reference?: string
 }
 
+/* ---------- Support chat ---------- */
+
+export interface SupportMessage {
+  id: number
+  /** true = sent by the support team (an admin), false = sent by the client. */
+  fromAdmin: boolean
+  body: string
+  createdAt: string // ISO datetime
+  readAt: string | null
+}
+
+export interface SupportThread {
+  messages: SupportMessage[]
+  /** Highest id of the viewer's own messages the other side has read (for "Seen"). */
+  readUpTo: number | null
+}
+
+/** A row in the admin's support inbox. */
+export interface SupportConversation {
+  userId: string
+  clientName: string
+  clientCode: string | null
+  email: string
+  lastMessage: string
+  lastFromAdmin: boolean
+  lastAt: string
+  unread: number
+}
+
+export interface UnreadCount {
+  count: number
+}
+
 /* ---------- KYC ---------- */
 
 export type KycStatus = 'SUBMITTED' | 'APPROVED' | 'REJECTED'

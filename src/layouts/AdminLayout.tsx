@@ -1,8 +1,10 @@
-import { ChartCandlestick, ExternalLink, Landmark, LogOut, Menu, Receipt, Users, X } from 'lucide-react'
+import { ChartCandlestick, ExternalLink, Landmark, LogOut, Menu, MessagesSquare, Receipt, Users, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
+import { api } from '../api'
 import { useAuth } from '../auth/AuthContext'
 import Logo from '../components/Logo'
+import { useSupportUnread } from '../hooks/useSupportUnread'
 import { initials } from '../utils/format'
 import '../styles/admin.css'
 
@@ -11,6 +13,7 @@ const NAV = [
   { to: '/admin/market', label: 'Market Watch', icon: ChartCandlestick, end: true },
   { to: '/admin/payment', label: 'Deposit Details', icon: Landmark, end: true },
   { to: '/admin/payment-proofs', label: 'Payment Proofs', icon: Receipt, end: true },
+  { to: '/admin/support', label: 'Support', icon: MessagesSquare, end: false },
 ]
 
 export default function AdminLayout() {
@@ -18,6 +21,7 @@ export default function AdminLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [open, setOpen] = useState(false)
+  const supportUnread = useSupportUnread(api.admin.getSupportUnread)
 
   // Close the mobile drawer whenever the route changes.
   const [lastPath, setLastPath] = useState(location.pathname)
@@ -64,6 +68,7 @@ export default function AdminLayout() {
               className={({ isActive }) => ((to === '/admin' ? isClientsActive : isActive) ? 'active' : '')}
             >
               <Icon size={18} /> {label}
+              {to === '/admin/support' && supportUnread > 0 && <span className="notif-pill a-nav-badge">{supportUnread > 99 ? '99+' : supportUnread}</span>}
             </NavLink>
           ))}
           <span className="a-nav-label">Site</span>
@@ -92,6 +97,10 @@ export default function AdminLayout() {
           </button>
           <Logo size={28} />
           <span className="badge">Admin</span>
+          <Link to="/admin/support" className="icon-btn notif-btn a-topbar-support" aria-label={supportUnread ? `Support, ${supportUnread} unread` : 'Support'}>
+            <MessagesSquare size={20} />
+            {supportUnread > 0 && <span className="notif-badge">{supportUnread > 9 ? '9+' : supportUnread}</span>}
+          </Link>
         </header>
         <main className="a-main">
           <Outlet />

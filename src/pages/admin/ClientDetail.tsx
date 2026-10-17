@@ -1,4 +1,4 @@
-import { ArrowUpFromLine, BookOpen, Briefcase, ChartLine, ChevronLeft, FileCheck2, Receipt, User as UserIcon } from 'lucide-react'
+import { ArrowUpFromLine, BookOpen, Briefcase, ChartLine, ChevronLeft, FileCheck2, MessagesSquare, Receipt, User as UserIcon } from 'lucide-react'
 import { Link, NavLink, Outlet, useOutletContext, useParams } from 'react-router'
 import { api } from '../../api'
 import { ErrorBox, Loading } from '../../components/Status'
@@ -52,6 +52,9 @@ export default function ClientDetail() {
         <div className="row-gap">
           <span className={`chip ${kycBadge(user.kycStatus).chip}`}>{kycBadge(user.kycStatus).label}</span>
           <span className={`chip ${user.verified ? 'chip-up' : 'chip-warn'}`}>{user.verified ? 'Verified' : 'Pending verification'}</span>
+          <Link to={`/admin/support/${user.id}`} className="btn btn-ghost btn-sm">
+            <MessagesSquare size={16} /> Message
+          </Link>
         </div>
       </div>
 

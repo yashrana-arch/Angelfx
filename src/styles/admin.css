@@ -65,3 +65,34 @@
 @media (max-width: 560px) {
   .withdrawal-actions { min-width: 0; width: 100%; }
 }
+
+/* ============ Notification badges in the shell ============ */
+.a-nav-badge { margin-left: auto; }
+.a-topbar-support { margin-left: auto; }
+
+/* ============ Support inbox ============ */
+.support-layout { display: grid; grid-template-columns: 320px 1fr; gap: 16px; height: calc(100dvh - 190px); min-height: 480px; }
+.support-list { display: flex; flex-direction: column; min-height: 0; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--border); overflow: hidden; }
+.support-list-search { padding: 12px; border-bottom: 1px solid var(--border); }
+.support-list-search .search-box { min-width: 0; width: 100%; }
+.support-list-items { flex: 1; overflow-y: auto; }
+.support-convo { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--border); color: var(--text); transition: background 0.15s; }
+.support-convo:hover { background: var(--surface-2); }
+.support-convo.active { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+.support-convo-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.support-convo-top, .support-convo-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.support-convo-top strong { color: var(--text-h); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.92rem; }
+.support-convo-time { font-size: 0.72rem; color: var(--muted); flex-shrink: 0; }
+.support-convo-preview { font-size: 0.84rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.support-convo.unread .support-convo-preview { color: var(--text-h); font-weight: 600; }
+.support-convo.unread .support-convo-time { color: var(--down); font-weight: 700; }
+.support-pane { min-height: 0; min-width: 0; }
+.support-placeholder { height: 100%; display: grid; place-items: center; border-radius: var(--radius-lg); border: 1px dashed var(--border-strong); }
+.support-back { display: none; }
+
+@media (max-width: 860px) {
+  .support-layout { grid-template-columns: 1fr; height: calc(100dvh - 170px); }
+  .support-layout.has-chat .support-list { display: none; }
+  .support-layout:not(.has-chat) .support-pane { display: none; }
+  .support-back { display: inline-grid; margin-left: -8px; }
+}

@@ -232,3 +232,11 @@ a.menu-row:hover, button.menu-row:hover { background: var(--surface-2); }
   .proof-row { flex-wrap: wrap; }
   .proof-row > .chip { margin-left: 88px; }
 }
+
+/* ============ Support ============ */
+.c-topbar-actions { display: flex; align-items: center; gap: 10px; }
+.page-support { max-width: 820px; width: 100%; margin: 0 auto; gap: 14px; }
+.page-support .chat { height: calc(100dvh - 220px); min-height: 420px; }
+@media (max-width: 860px) {
+  .page-support .chat { height: calc(100dvh - 270px - env(safe-area-inset-bottom)); min-height: 360px; }
+}

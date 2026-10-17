@@ -10,6 +10,9 @@ import type {
   Kyc,
   KycInput,
   PaymentProof,
+  SupportConversation,
+  SupportMessage,
+  SupportThread,
   LedgerEntry,
   MarketWatch,
   PaymentInfo,
@@ -37,6 +40,8 @@ interface DB {
   kyc: Record<string, Kyc>
   /** Newest first. The mock keeps the image as a data URL. */
   proofs: (PaymentProof & { dataUrl: string })[]
+  /** All support messages, oldest first; `userId` is the client the conversation belongs to. */
+  support: (SupportMessage & { userId: string })[]
 }
 
 const DB_KEY = 'veltrex_mock_db_v3'
@@ -132,6 +137,7 @@ function seed(): DB {
     },
     kyc: {},
     proofs: [],
+    support: [],
     withdrawals: {
       u_client: [
         { id: 'w1', amount: 5000, accountDetails: 'shiv@okaxis', status: 'APPROVED', adminNote: 'Paid', createdAt: daysAgo(6) },
@@ -146,6 +152,7 @@ function load(): DB {
     const db = JSON.parse(raw) as DB
     db.kyc ??= {} // added after v3 was seeded
     db.proofs ??= []
+    db.support ??= []
     return db
   }
   const db = seed()
@@ -192,8 +199,38 @@ const normalizeKyc = (i: KycInput): KycInput => ({
   panNumber: i.panNumber.trim().toUpperCase(),
 })
 
+/* Support chat helpers (mirror SupportService in the API) */
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const publicProof = ({ dataUrl, ...p }: DB['proofs'][number]): PaymentProof => p
+const publicMessage = ({ userId, ...m }: DB['support'][number]): SupportMessage => m
+
+function supportThread(db: DB, userId: string, viewerIsAdmin: boolean, afterId?: number): SupportThread {
+  const mine = db.support.filter((m) => m.userId === userId)
+  const messages = (afterId ? mine.filter((m) => m.id > afterId) : mine.slice(-200)).map(publicMessage)
+  const read = mine.filter((m) => m.fromAdmin === viewerIsAdmin && m.readAt)
+  return { messages, readUpTo: read.length ? read[read.length - 1]!.id : null }
+}
+
+function addSupportMessage(db: DB, userId: string, fromAdmin: boolean, body: string): SupportMessage {
+  const text = body.trim()
+  if (!text) throw new ApiError(400, 'Type a message')
+  if (text.length > 2000) throw new ApiError(400, 'Message is too long (max 2000 characters)')
+  const m = { id: (db.support.at(-1)?.id ?? 0) + 1, userId, fromAdmin, body: text, createdAt: new Date().toISOString(), readAt: null }
+  db.support.push(m)
+  save(db)
+  return publicMessage(m)
+}
+
+function markSupportRead(db: DB, userId: string, viewerIsAdmin: boolean) {
+  const now = new Date().toISOString()
+  db.support.forEach((m) => {
+    if (m.userId === userId && m.fromAdmin !== viewerIsAdmin && !m.readAt) m.readAt = now
+  })
+  save(db)
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const publicProof =({ dataUrl, ...p }: DB['proofs'][number]): PaymentProof => p
 
 async function proofImage(p: DB['proofs'][number] | undefined): Promise<Blob> {
   if (!p) throw new ApiError(404, 'Screenshot not found')
@@ -278,6 +315,25 @@ export const mockApi: Api = {
       save(db)
       return delay(w)
     },
+    async getSupportThread(afterId) {
+      const db = load()
+      return delay(supportThread(db, currentUser(db, 'client').id, false, afterId))
+    },
+    async sendSupportMessage(body) {
+      const db = load()
+      return delay(addSupportMessage(db, currentUser(db, 'client').id, false, body))
+    },
+    async markSupportRead() {
+      const db = load()
+      markSupportRead(db, currentUser(db, 'client').id, false)
+      return delay(undefined)
+    },
+    async getSupportUnread() {
+      const db = load()
+      const id = currentUser(db, 'client').id
+      return delay({ count: db.support.filter((m) => m.userId === id && m.fromAdmin && !m.readAt).length })
+    },
+
     async getPaymentProofs() {
       const db = load()
       const user = currentUser(db, 'client')
@@ -374,6 +430,49 @@ export const mockApi: Api = {
       if (password) user.password = password
       save(db)
       return delay(publicUser(user))
+    },
+
+    async listSupportConversations() {
+      const db = load()
+      currentUser(db, 'admin')
+      const byUser = new Map<string, SupportConversation>()
+      for (const m of db.support) {
+        const user = db.users.find((u) => u.id === m.userId)
+        if (!user) continue
+        const prev = byUser.get(m.userId)
+        byUser.set(m.userId, {
+          userId: m.userId,
+          clientName: user.name,
+          clientCode: user.clientCode ?? null,
+          email: user.email,
+          lastMessage: m.body.length > 120 ? `${m.body.slice(0, 120)}…` : m.body,
+          lastFromAdmin: m.fromAdmin,
+          lastAt: m.createdAt,
+          unread: (prev?.unread ?? 0) + (!m.fromAdmin && !m.readAt ? 1 : 0),
+        })
+      }
+      return delay([...byUser.values()].sort((a, b) => b.lastAt.localeCompare(a.lastAt)))
+    },
+    async getSupportUnread() {
+      const db = load()
+      currentUser(db, 'admin')
+      return delay({ count: db.support.filter((m) => !m.fromAdmin && !m.readAt).length })
+    },
+    async getSupportThread(userId, afterId) {
+      const db = load()
+      getClient(db, userId)
+      return delay(supportThread(db, userId, true, afterId))
+    },
+    async sendSupportMessage(userId, body) {
+      const db = load()
+      getClient(db, userId)
+      return delay(addSupportMessage(db, userId, true, body))
+    },
+    async markSupportRead(userId) {
+      const db = load()
+      getClient(db, userId)
+      markSupportRead(db, userId, true)
+      return delay(undefined)
     },
 
     async listPaymentProofs(status) {

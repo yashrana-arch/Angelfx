@@ -4,6 +4,7 @@ import {
   BadgeCheck,
   BookOpen,
   FileCheck2,
+  Headset,
   ChevronRight,
   Clock,
   KeyRound,
@@ -20,9 +21,11 @@ import PageHeader from '../../components/PageHeader'
 import { useAsync } from '../../hooks/useAsync'
 import { formatINR, initials } from '../../utils/format'
 import { kycBadge } from '../../utils/status'
+import { useClientShell } from '../../layouts/ClientLayout'
 
 export default function Profile() {
   const { user, logout } = useAuth()
+  const { supportUnread } = useClientShell()
   const navigate = useNavigate()
   const { data: portfolio } = useAsync(() => api.client.getPortfolio())
 
@@ -87,6 +90,12 @@ export default function Profile() {
         <div className="menu-group-title">Settings</div>
         <MenuRow to="/client/ledger" icon={<BookOpen size={18} />} label="Ledger" />
         <MenuRow to="/client/withdraw" icon={<Clock size={18} />} label="Withdrawal history" />
+        <MenuRow
+          to="/client/support"
+          icon={<Headset size={18} />}
+          label="Help & support"
+          value={supportUnread > 0 ? <span className="notif-pill">{supportUnread} new</span> : undefined}
+        />
         <MenuRow to="/client/change-password" icon={<KeyRound size={18} />} label="Change password" />
         <button className="menu-row danger" onClick={handleLogout}>
           <span className="menu-icon">

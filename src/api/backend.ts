@@ -20,6 +20,10 @@ import type {
   PaymentUpdate,
   Portfolio,
   RegisterInput,
+  SupportConversation,
+  SupportMessage,
+  SupportThread,
+  UnreadCount,
   Trade,
   TradeInput,
   User,
@@ -65,6 +69,14 @@ export const backendApi = {
         method: 'POST',
         body: { currentPassword, newPassword },
       }),
+    // Support chat. Pass afterId (the last id you have) when polling to get only new messages.
+    getSupportThread: (afterId?: number) =>
+      request<SupportThread>(`/client/support/messages${afterId ? `?afterId=${afterId}` : ''}`),
+    sendSupportMessage: (body: string) =>
+      request<SupportMessage>('/client/support/messages', { method: 'POST', body: { body } }),
+    markSupportRead: () => request<void>('/client/support/read', { method: 'POST' }),
+    getSupportUnread: () => request<UnreadCount>('/client/support/unread'),
+
     getPaymentProofs: () => request<PaymentProof[]>('/client/payment-proofs'),
     // POST multipart/form-data: image (file), amount?, reference?
     uploadPaymentProof: ({ image, amount, reference }: PaymentProofUpload) => {
@@ -93,6 +105,15 @@ export const backendApi = {
       request<User>('/admin/users', { method: 'POST', body: input }),
     updateUser: (userId: string, input: ClientUpdate) =>
       request<User>(`/admin/users/${userId}`, { method: 'PUT', body: input }),
+
+    // Support inbox
+    listSupportConversations: () => request<SupportConversation[]>('/admin/support/conversations'),
+    getSupportUnread: () => request<UnreadCount>('/admin/support/unread'),
+    getSupportThread: (userId: string, afterId?: number) =>
+      request<SupportThread>(`/admin/users/${userId}/support/messages${afterId ? `?afterId=${afterId}` : ''}`),
+    sendSupportMessage: (userId: string, body: string) =>
+      request<SupportMessage>(`/admin/users/${userId}/support/messages`, { method: 'POST', body: { body } }),
+    markSupportRead: (userId: string) => request<void>(`/admin/users/${userId}/support/read`, { method: 'POST' }),
 
     // All clients' screenshots, newest first; pass a status for the review queue.
     listPaymentProofs: (status?: PaymentProofStatus) =>

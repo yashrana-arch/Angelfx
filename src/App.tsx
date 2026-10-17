@@ -17,6 +17,7 @@ import EditTrades from './pages/admin/EditTrades'
 import MarketWatchEditor from './pages/admin/MarketWatchEditor'
 import PaymentProofsQueue from './pages/admin/PaymentProofsQueue'
 import PaymentSettings from './pages/admin/PaymentSettings'
+import AdminSupport from './pages/admin/Support'
 import Withdrawals from './pages/admin/Withdrawals'
 import ChangePassword from './pages/client/ChangePassword'
 import Deposit from './pages/client/Deposit'
@@ -24,6 +25,7 @@ import Kyc from './pages/client/Kyc'
 import Ledger from './pages/client/Ledger'
 import Portfolio from './pages/client/Portfolio'
 import Profile from './pages/client/Profile'
+import Support from './pages/client/Support'
 import Trades from './pages/client/Trades'
 import Watchlist from './pages/client/Watchlist'
 import Withdraw from './pages/client/Withdraw'
@@ -47,6 +49,7 @@ export default function App() {
               <Route path="portfolio" element={<Portfolio />} />
               <Route path="profile" element={<Profile />} />
               <Route path="kyc" element={<Kyc />} />
+              <Route path="support" element={<Support />} />
               <Route path="deposit" element={<Deposit />} />
               <Route path="withdraw" element={<Withdraw />} />
               <Route path="ledger" element={<Ledger />} />
@@ -61,6 +64,8 @@ export default function App() {
               <Route path="market" element={<MarketWatchEditor />} />
               <Route path="payment" element={<PaymentSettings />} />
               <Route path="payment-proofs" element={<PaymentProofsQueue />} />
+              <Route path="support" element={<AdminSupport />} />
+              <Route path="support/:userId" element={<AdminSupport />} />
               <Route path="users/:userId" element={<ClientDetail />}>
                 <Route index element={<EditProfile />} />
                 <Route path="kyc" element={<EditKyc />} />

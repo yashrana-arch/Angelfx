@@ -1,9 +1,19 @@
-import { ArrowRight, Briefcase, ChartCandlestick, ChartLine, ShieldAlert, User } from 'lucide-react'
-import { Link, NavLink, Outlet, useLocation } from 'react-router'
+import { ArrowRight, Briefcase, ChartCandlestick, ChartLine, Headset, ShieldAlert, User } from 'lucide-react'
+import { Link, NavLink, Outlet, useLocation, useOutletContext } from 'react-router'
+import { api } from '../api'
 import { useAuth } from '../auth/AuthContext'
 import Logo from '../components/Logo'
+import { useSupportUnread } from '../hooks/useSupportUnread'
 import { initials } from '../utils/format'
 import '../styles/client.css'
+
+export interface ClientShellCtx {
+  /** Unread replies from support, for badges on child pages. */
+  supportUnread: number
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const useClientShell = () => useOutletContext<ClientShellCtx>()
 
 const NAV = [
   { to: '/client', label: 'Watchlist', icon: ChartCandlestick, end: true },
@@ -17,6 +27,7 @@ export default function ClientLayout() {
   const { pathname } = useLocation()
   // Nudge until KYC is submitted (or after it's rejected); hidden on the KYC page itself.
   const kycNudge = user && (!user.kycStatus || user.kycStatus === 'REJECTED') && pathname !== '/client/kyc'
+  const supportUnread = useSupportUnread(api.client.getSupportUnread)
 
   return (
     <div className="client-app">
@@ -32,9 +43,20 @@ export default function ClientLayout() {
               </NavLink>
             ))}
           </nav>
-          <Link to="/client/profile" className="avatar avatar-sm" aria-label="Profile">
-            {initials(user?.name ?? '')}
-          </Link>
+          <div className="c-topbar-actions">
+            <Link
+              to="/client/support"
+              className={`icon-btn notif-btn ${pathname === '/client/support' ? 'active' : ''}`}
+              aria-label={supportUnread ? `Support, ${supportUnread} unread` : 'Support'}
+              title="Help & support"
+            >
+              <Headset size={20} />
+              {supportUnread > 0 && <span className="notif-badge">{supportUnread > 9 ? '9+' : supportUnread}</span>}
+            </Link>
+            <Link to="/client/profile" className="avatar avatar-sm" aria-label="Profile">
+              {initials(user?.name ?? '')}
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -55,7 +77,7 @@ export default function ClientLayout() {
             <ArrowRight size={18} className="kyc-banner-arrow" />
           </Link>
         )}
-        <Outlet />
+        <Outlet context={{ supportUnread } satisfies ClientShellCtx} />
       </main>
 
       <nav className="c-bottomnav" aria-label="Primary">
