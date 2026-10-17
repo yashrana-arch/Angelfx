@@ -1,4 +1,4 @@
-import { BookOpen, Check, RotateCcw, X } from 'lucide-react'
+import { BookOpen, Check, RotateCcw, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { api } from '../../api'
@@ -7,10 +7,36 @@ import type { PaymentProof, PaymentProofStatus } from '../../types'
 import { errorMessage, formatDateTime, formatINR } from '../../utils/format'
 import { proofChip, proofLabel } from '../../utils/status'
 
-/** One payment screenshot with approve / reject controls. Used on the client tab and the review queue. */
-export default function ProofReviewRow({ p, showClient, onUpdated }: { p: PaymentProof; showClient?: boolean; onUpdated: (p: PaymentProof) => void }) {
+/** One payment screenshot with approve / reject / delete controls. Used on the client tab and the review queue. */
+export default function ProofReviewRow({
+  p,
+  showClient,
+  onUpdated,
+  onDeleted,
+}: {
+  p: PaymentProof
+  showClient?: boolean
+  onUpdated: (p: PaymentProof) => void
+  onDeleted: () => void
+}) {
   const [note, setNote] = useState(p.adminNote)
   const [busy, setBusy] = useState(false)
+
+  async function handleDelete() {
+    const warning =
+      p.status === 'APPROVED'
+        ? 'Delete this approved screenshot? This can’t be undone. Any ledger credit you already added stays.'
+        : 'Delete this screenshot? This can’t be undone.'
+    if (!window.confirm(warning)) return
+    setBusy(true)
+    try {
+      await api.admin.deletePaymentProof(p.userId, p.id)
+      onDeleted()
+    } catch (err) {
+      alert(errorMessage(err, 'Could not delete the screenshot'))
+      setBusy(false)
+    }
+  }
 
   async function decide(status: PaymentProofStatus) {
     setBusy(true)
@@ -59,6 +85,7 @@ export default function ProofReviewRow({ p, showClient, onUpdated }: { p: Paymen
             <button className="btn btn-danger-soft btn-sm" disabled={busy} onClick={() => decide('REJECTED')}>
               <X size={16} /> Reject
             </button>
+            <DeleteButton busy={busy} onClick={handleDelete} />
           </div>
           <span className="hint">Approving doesn’t add funds. Credit the amount on the client’s Ledger tab.</span>
         </div>
@@ -72,8 +99,17 @@ export default function ProofReviewRow({ p, showClient, onUpdated }: { p: Paymen
           <button className="btn btn-ghost btn-sm" disabled={busy} onClick={() => decide('PENDING')}>
             <RotateCcw size={16} /> Reopen
           </button>
+          <DeleteButton busy={busy} onClick={handleDelete} />
         </div>
       )}
     </div>
+  )
+}
+
+function DeleteButton({ busy, onClick }: { busy: boolean; onClick: () => void }) {
+  return (
+    <button type="button" className="icon-btn danger" disabled={busy} onClick={onClick} aria-label="Delete screenshot" title="Delete screenshot">
+      <Trash2 size={16} />
+    </button>
   )
 }

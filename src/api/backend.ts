@@ -88,6 +88,8 @@ export const backendApi = {
     },
     getPaymentProofImage: (proofId: string) =>
       request<Blob>(`/client/payment-proofs/${proofId}/image`, { blob: true }),
+    // Only allowed while the screenshot is still pending review.
+    deletePaymentProof: (proofId: string) => request<void>(`/client/payment-proofs/${proofId}`, { method: 'DELETE' }),
 
     // GET returns 204 (-> null) until the client has submitted KYC.
     getKyc: () => request<Kyc | undefined>('/client/kyc').then((k) => k ?? null),
@@ -121,6 +123,9 @@ export const backendApi = {
     getPaymentProofs: (userId: string) => request<PaymentProof[]>(`/admin/users/${userId}/payment-proofs`),
     getPaymentProofImage: (userId: string, proofId: string) =>
       request<Blob>(`/admin/users/${userId}/payment-proofs/${proofId}/image`, { blob: true }),
+    // Any status; doesn't touch the ledger.
+    deletePaymentProof: (userId: string, proofId: string) =>
+      request<void>(`/admin/users/${userId}/payment-proofs/${proofId}`, { method: 'DELETE' }),
     // Approving doesn't credit the ledger; the admin does that on the Ledger tab.
     updatePaymentProof: (userId: string, proofId: string, status: PaymentProofStatus, adminNote: string) =>
       request<PaymentProof>(`/admin/users/${userId}/payment-proofs/${proofId}`, {

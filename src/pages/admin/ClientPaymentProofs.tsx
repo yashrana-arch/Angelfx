@@ -24,7 +24,12 @@ export default function ClientPaymentProofs() {
   return (
     <div className="list-panel">
       {data.map((p) => (
-        <ProofReviewRow key={p.id} p={p} onUpdated={(u) => setData(data.map((x) => (x.id === u.id ? u : x)))} />
+        <ProofReviewRow
+          key={p.id}
+          p={p}
+          onUpdated={(u) => setData(data.map((x) => (x.id === u.id ? u : x)))}
+          onDeleted={() => setData(data.filter((x) => x.id !== p.id))}
+        />
       ))}
     </div>
   )

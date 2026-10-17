@@ -230,7 +230,7 @@ a.menu-row:hover, button.menu-row:hover { background: var(--surface-2); }
 .proof-preview-info strong { color: var(--text-h); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 560px) {
   .proof-row { flex-wrap: wrap; }
-  .proof-row > .chip { margin-left: 88px; }
+  .proof-row-end { margin-left: 88px; }
 }
 
 /* ============ Support ============ */

@@ -363,6 +363,16 @@ export const mockApi: Api = {
       save(db)
       return delay(publicProof(proof))
     },
+    async deletePaymentProof(proofId) {
+      const db = load()
+      const user = currentUser(db, 'client')
+      const p = db.proofs.find((x) => x.id === proofId && x.userId === user.id)
+      if (!p) throw new ApiError(404, 'Screenshot not found')
+      if (p.status !== 'PENDING') throw new ApiError(409, "This screenshot has already been reviewed, so it can't be deleted")
+      db.proofs = db.proofs.filter((x) => x !== p)
+      save(db)
+      return delay(undefined)
+    },
     async getPaymentProofImage(proofId) {
       const db = load()
       const user = currentUser(db, 'client')
@@ -484,6 +494,15 @@ export const mockApi: Api = {
       const db = load()
       getClient(db, userId)
       return delay(db.proofs.filter((p) => p.userId === userId).map(publicProof))
+    },
+    async deletePaymentProof(userId, proofId) {
+      const db = load()
+      getClient(db, userId)
+      const before = db.proofs.length
+      db.proofs = db.proofs.filter((x) => !(x.id === proofId && x.userId === userId))
+      if (db.proofs.length === before) throw new ApiError(404, 'Screenshot not found')
+      save(db)
+      return delay(undefined)
     },
     async getPaymentProofImage(userId, proofId) {
       const db = load()

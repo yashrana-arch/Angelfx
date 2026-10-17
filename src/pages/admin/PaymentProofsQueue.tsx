@@ -54,6 +54,7 @@ export default function PaymentProofsQueue() {
               onUpdated={(u) =>
                 setData(filter === 'ALL' || u.status === filter ? data.map((x) => (x.id === u.id ? u : x)) : data.filter((x) => x.id !== u.id))
               }
+              onDeleted={() => setData(data.filter((x) => x.id !== p.id))}
             />
           ))}
         </div>

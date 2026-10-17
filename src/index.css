@@ -370,7 +370,6 @@ select.input-sm { padding-right: 28px; background-position: calc(100% - 15px) 50
 .proof-full img { max-height: 70vh; width: auto; border-radius: 12px; border: 1px solid var(--border); }
 
 .proof-row { justify-content: flex-start; align-items: center; }
-.proof-row > .chip { margin-left: auto; }
 .proof-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .proof-info .mono { overflow-wrap: anywhere; }
 .proof-review { align-items: flex-start; flex-wrap: wrap; }
@@ -429,3 +428,4 @@ select.input-sm { padding-right: 28px; background-position: calc(100% - 15px) 50
 .chat-send-error { width: 100%; }
 .chat-input { flex: 1; min-width: 0; height: auto; min-height: 44px; max-height: 140px; padding: 11px 14px; resize: none; line-height: 1.4; }
 .chat-send { width: 44px; height: 44px; padding: 0; flex-shrink: 0; border-radius: 12px; }
+.proof-row-end { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-shrink: 0; }

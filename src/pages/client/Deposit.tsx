@@ -1,6 +1,6 @@
-import { Check, Copy, ImagePlus, Info, QrCode, Receipt, Upload, X } from 'lucide-react'
+import { Check, Copy, ImagePlus, Info, QrCode, Receipt, Trash2, Upload, X } from 'lucide-react'
 import { useEffect, useRef, useState, type ClipboardEvent, type DragEvent, type FormEvent } from 'react'
-import { api } from '../../api'
+import { api, ApiError } from '../../api'
 import PageHeader from '../../components/PageHeader'
 import ProofImage from '../../components/ProofImage'
 import { EmptyState, ErrorBox, Loading } from '../../components/Status'
@@ -108,7 +108,12 @@ export default function Deposit() {
           ) : (
             <div className="list-panel">
               {proofs.data!.map((p) => (
-                <ProofRow key={p.id} p={p} />
+                <ProofRow
+                  key={p.id}
+                  p={p}
+                  onDeleted={() => proofs.setData(proofs.data!.filter((x) => x.id !== p.id))}
+                  onStale={proofs.reload}
+                />
               ))}
             </div>
           )}
@@ -274,7 +279,23 @@ function UploadProof({ onUploaded }: { onUploaded: (p: PaymentProof) => void }) 
   )
 }
 
-function ProofRow({ p }: { p: PaymentProof }) {
+function ProofRow({ p, onDeleted, onStale }: { p: PaymentProof; onDeleted: () => void; onStale: () => void }) {
+  const [deleting, setDeleting] = useState(false)
+
+  async function handleDelete() {
+    if (!window.confirm('Delete this screenshot? You can upload a new one afterwards.')) return
+    setDeleting(true)
+    try {
+      await api.client.deletePaymentProof(p.id)
+      onDeleted()
+    } catch (err) {
+      alert(errorMessage(err, 'Could not delete the screenshot'))
+      setDeleting(false)
+      // Most likely it was reviewed in the meantime: show the current status.
+      if (err instanceof ApiError && err.status === 409) onStale()
+    }
+  }
+
   return (
     <div className="list-row proof-row">
       <ProofImage load={() => api.client.getPaymentProofImage(p.id)} alt={p.fileName} />
@@ -291,7 +312,14 @@ function ProofRow({ p }: { p: PaymentProof }) {
         </span>
         {p.adminNote && <span className="small">Note: {p.adminNote}</span>}
       </div>
-      <span className={`chip ${proofChip[p.status]}`}>{proofLabel[p.status]}</span>
+      <div className="proof-row-end">
+        <span className={`chip ${proofChip[p.status]}`}>{proofLabel[p.status]}</span>
+        {p.status === 'PENDING' && (
+          <button type="button" className="icon-btn danger" onClick={handleDelete} disabled={deleting} aria-label="Delete screenshot" title="Delete">
+            {deleting ? <span className="spinner" /> : <Trash2 size={16} />}
+          </button>
+        )}
+      </div>
     </div>
   )
 }
