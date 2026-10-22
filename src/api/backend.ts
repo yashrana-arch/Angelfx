@@ -5,6 +5,7 @@
  * different paths or payload shapes, adjust them in this file only.
  */
 import type {
+  AddFundsInput,
   ClientUpdate,
   Kyc,
   KycInput,
@@ -156,6 +157,9 @@ export const backendApi = {
     // Replaces the whole ledger list.
     updateLedger: (userId: string, entries: LedgerEntry[]) =>
       request<LedgerEntry[]>(`/admin/users/${userId}/ledger`, { method: 'PUT', body: entries }),
+    // POST { amount, description? } -> the new CREDIT ledger entry (dated today)
+    addFunds: (userId: string, input: AddFundsInput) =>
+      request<LedgerEntry>(`/admin/users/${userId}/funds`, { method: 'POST', body: input }),
 
     // PUT multipart/form-data: upiId, bankName, accountHolderName, accountNumber, ifscCode, note, qrImage (file, optional)
     updatePayment: (update: PaymentUpdate) => {

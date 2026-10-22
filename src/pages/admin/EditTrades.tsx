@@ -2,6 +2,7 @@ import { Inbox, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { api } from '../../api'
 import Modal from '../../components/Modal'
+import NumberInput from '../../components/NumberInput'
 import { EmptyState, ErrorBox, Loading } from '../../components/Status'
 import { useAsync } from '../../hooks/useAsync'
 import { useSaver } from '../../hooks/useSaver'
@@ -154,6 +155,8 @@ function TradeModal({ userId, trade, onSaved, onClose }: ModalProps) {
   const set = <K extends keyof TradeInput>(key: K, value: TradeInput[K]) => {
     const next = { ...form, [key]: value }
     if (['side', 'quantity', 'entryPrice', 'exitPrice'].includes(key)) next.pnl = calcPnl(next)
+    // Clearing the exit price drops the P&L it calculated.
+    if (key === 'exitPrice' && value == null) next.pnl = 0
     setForm(next)
   }
 
@@ -202,26 +205,19 @@ function TradeModal({ userId, trade, onSaved, onClose }: ModalProps) {
         </label>
         <label className="field">
           <span>Quantity</span>
-          <input className="input" type="number" min="0" step="any" value={form.quantity} onChange={(e) => set('quantity', Number(e.target.value))} required />
+          <NumberInput className="input" min="0" step="any" value={form.quantity} onChange={(v) => set('quantity', v ?? 0)} required />
         </label>
         <label className="field">
           <span>Entry price (₹)</span>
-          <input className="input" type="number" step="0.01" value={form.entryPrice} onChange={(e) => set('entryPrice', Number(e.target.value))} required />
+          <NumberInput className="input" step="0.01" value={form.entryPrice} onChange={(v) => set('entryPrice', v ?? 0)} required />
         </label>
         <label className="field">
           <span>Exit price (₹)</span>
-          <input
-            className="input"
-            type="number"
-            step="0.01"
-            value={form.exitPrice ?? ''}
-            placeholder="Empty if still open"
-            onChange={(e) => set('exitPrice', e.target.value === '' ? null : Number(e.target.value))}
-          />
+          <NumberInput className="input" step="0.01" value={form.exitPrice} placeholder="Empty if still open" onChange={(v) => set('exitPrice', v)} />
         </label>
         <label className="field full">
           <span>P&amp;L (₹)</span>
-          <input className="input" type="number" step="0.01" value={form.pnl} onChange={(e) => set('pnl', Number(e.target.value))} required />
+          <NumberInput className="input" step="0.01" value={form.pnl} onChange={(v) => set('pnl', v ?? 0)} required />
           <span className="hint">Auto-calculated when an exit price is set. For active trades, enter the current unrealised P&amp;L.</span>
         </label>
         {status && !status.ok && <div className="alert alert-error full">{status.text}</div>}

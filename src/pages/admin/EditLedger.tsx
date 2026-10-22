@@ -43,7 +43,7 @@ function LedgerForm({ userId, initial }: { userId: string; initial: LedgerEntry[
         <div className="panel-head">
           <h2>Ledger entries</h2>
           <span className="muted small">
-            Closing balance <strong className="text-h">{formatINR(balance)}</strong>
+            Manual entries total <strong className="text-h">{formatINR(balance)}</strong>
           </span>
         </div>
         <RowsEditor
@@ -54,7 +54,7 @@ function LedgerForm({ userId, initial }: { userId: string; initial: LedgerEntry[
           addLabel="Add entry"
           emptyText="No ledger entries."
         />
-        <p className="hint">Tip: the closing balance here doesn’t change the Portfolio “Ledger balance”. Update that on the Portfolio tab.</p>
+        <p className="hint">Funds added from the Portfolio tab appear here, and you can fix or remove them. Approved withdrawals and closed-trade P&amp;L are added to the client’s ledger automatically, so don’t enter them here. The full balance is on the Portfolio tab.</p>
       </section>
       <SaveBar saving={saving} status={status} label="Save ledger" />
     </form>

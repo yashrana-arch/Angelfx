@@ -72,7 +72,7 @@ export default function Login() {
             <Logo size={36} />
           </div>
           <h1>Welcome back</h1>
-          <p className="muted">Sign in to continue. You’ll land on your client or admin dashboard automatically.</p>
+          <p className="muted">Sign in to continue.</p>
 
           <label className="field">
             <span>Email or User ID</span>

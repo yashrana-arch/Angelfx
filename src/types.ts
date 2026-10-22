@@ -190,7 +190,13 @@ export interface LedgerEntry {
   amount: number
 }
 
-/** Recharge details shown on the client's Deposit page. */
+/** Admin credits a client's account, e.g. after confirming their payment. */
+export interface AddFundsInput {
+  amount: number
+  /** Defaults to "Funds added". */
+  description?: string
+}
+
 /** Deposit details shared by all clients: UPI QR plus bank transfer details. */
 export interface PaymentInfo {
   qrImageUrl: string | null

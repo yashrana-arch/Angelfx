@@ -22,6 +22,7 @@ import type {
   User,
   Withdrawal,
 } from '../types'
+import { fullLedger, summarize } from './account'
 import type { Api } from './backend'
 import { ApiError, tokenStore } from './http'
 
@@ -56,7 +57,11 @@ const emptyPortfolio = (): Portfolio => ({
   positions: [],
 })
 
-const daysAgo = (n: number, hour = 10) => {
+/** Calculated account summary, same rules as the backend (see ./account). */
+const portfolioOf = (db: DB, userId: string) =>
+  summarize(db.portfolios[userId]?.message ?? '', db.ledgers[userId] ?? [], db.trades[userId] ?? [], db.withdrawals[userId] ?? [])
+
+const daysAgo =(n: number, hour = 10) => {
   const d = new Date()
   d.setDate(d.getDate() - n)
   d.setHours(hour, 15, 0, 0)
@@ -123,7 +128,6 @@ function seed(): DB {
         { id: 'l1', date: daysAgo(10).slice(0, 10), description: 'UPI deposit', type: 'CREDIT', amount: 40000 },
         { id: 'l2', date: daysAgo(5).slice(0, 10), description: 'UPI deposit', type: 'CREDIT', amount: 10000 },
         { id: 'l3', date: daysAgo(2).slice(0, 10), description: 'Brokerage & charges', type: 'DEBIT', amount: 120 },
-        { id: 'l4', date: daysAgo(1).slice(0, 10), description: 'Realised profit', type: 'CREDIT', amount: 120 },
       ],
     },
     payment: {
@@ -290,7 +294,7 @@ export const mockApi: Api = {
   client: {
     async getPortfolio() {
       const db = load()
-      return delay(db.portfolios[currentUser(db, 'client').id] ?? emptyPortfolio())
+      return delay(portfolioOf(db, currentUser(db, 'client').id))
     },
     async getTrades() {
       const db = load()
@@ -298,7 +302,8 @@ export const mockApi: Api = {
     },
     async getLedger() {
       const db = load()
-      return delay(db.ledgers[currentUser(db, 'client').id] ?? [])
+      const id = currentUser(db, 'client').id
+      return delay(fullLedger(db.ledgers[id] ?? [], db.trades[id] ?? [], db.withdrawals[id] ?? []))
     },
     async getWithdrawals() {
       const db = load()
@@ -307,7 +312,7 @@ export const mockApi: Api = {
     async requestWithdrawal(input) {
       const db = load()
       const user = currentUser(db, 'client')
-      const available = db.portfolios[user.id]?.marginAvailable ?? 0
+      const available = portfolioOf(db, user.id).marginAvailable
       if (input.amount <= 0) throw new ApiError(400, 'Enter a valid amount')
       if (input.amount > available) throw new ApiError(400, 'Amount exceeds available margin')
       const w: Withdrawal = { id: uid(), ...input, status: 'PENDING', adminNote: '', createdAt: new Date().toISOString() }
@@ -556,14 +561,15 @@ export const mockApi: Api = {
     async getPortfolio(userId) {
       const db = load()
       getClient(db, userId)
-      return delay(db.portfolios[userId] ?? emptyPortfolio())
+      return delay(portfolioOf(db, userId))
     },
     async updatePortfolio(userId, portfolio) {
       const db = load()
       getClient(db, userId)
-      db.portfolios[userId] = portfolio
+      // Only the announcement is stored; the figures are calculated.
+      db.portfolios[userId] = { ...(db.portfolios[userId] ?? emptyPortfolio()), message: portfolio.message.trim() }
       save(db)
-      return delay(portfolio)
+      return delay(portfolioOf(db, userId))
     },
 
     async getTrades(userId) {
@@ -607,6 +613,21 @@ export const mockApi: Api = {
       save(db)
       return delay(entries)
     },
+    async addFunds(userId, { amount, description }) {
+      const db = load()
+      getClient(db, userId)
+      if (!(amount > 0)) throw new ApiError(400, 'Enter a valid amount')
+      const entry: LedgerEntry = {
+        id: uid(),
+        date: new Date().toISOString().slice(0, 10),
+        description: description?.trim() || 'Funds added',
+        type: 'CREDIT',
+        amount,
+      }
+      db.ledgers[userId] = [...(db.ledgers[userId] ?? []), entry]
+      save(db)
+      return delay(entry)
+    },
 
     async updatePayment({ qrImage, ...fields }) {
       const db = load()
@@ -632,6 +653,12 @@ export const mockApi: Api = {
       const list = db.withdrawals[userId] ?? []
       const w = list.find((x) => x.id === id)
       if (!w) throw new ApiError(404, 'Request not found')
+      // A pending request is already held back from available margin; a rejected one would be newly deducted.
+      if (status === 'APPROVED' && w.status !== 'APPROVED') {
+        const hold = w.status === 'PENDING' ? 0 : w.amount
+        if (portfolioOf(db, userId).marginAvailable - hold < 0)
+          throw new ApiError(400, "The client's available margin is too low to approve this withdrawal")
+      }
       w.status = status
       w.adminNote = adminNote
       save(db)

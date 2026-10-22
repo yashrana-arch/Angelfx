@@ -1,4 +1,5 @@
 import { Plus, Trash2 } from 'lucide-react'
+import NumberInput from './NumberInput'
 
 export interface Column<T> {
   key: keyof T & string
@@ -28,10 +29,8 @@ export default function RowsEditor<T extends { id: string }>({
   addLabel = 'Add row',
   emptyText = 'No rows yet.',
 }: Props<T>) {
-  const update = (id: string, key: keyof T, raw: string, type: Column<T>['type']) => {
-    const value = type === 'number' ? (raw === '' ? 0 : Number(raw)) : raw
+  const update = (id: string, key: keyof T, value: string | number) =>
     onChange(rows.map((r) => (r.id === id ? { ...r, [key]: value } : r)))
-  }
 
   return (
     <div className="rows-editor">
@@ -62,19 +61,26 @@ export default function RowsEditor<T extends { id: string }>({
                   return (
                     <td key={c.key}>
                       {c.type === 'select' ? (
-                        <select className="input input-sm" value={value} onChange={(e) => update(row.id, c.key, e.target.value, c.type)}>
+                        <select className="input input-sm" value={value} onChange={(e) => update(row.id, c.key, e.target.value)}>
                           {c.options?.map((o) => (
                             <option key={o}>{o}</option>
                           ))}
                         </select>
+                      ) : c.type === 'number' ? (
+                        <NumberInput
+                          className="input input-sm"
+                          step="any"
+                          placeholder={c.placeholder}
+                          value={value as number}
+                          onChange={(v) => update(row.id, c.key, v ?? 0)}
+                        />
                       ) : (
                         <input
                           className="input input-sm"
                           type={c.type ?? 'text'}
-                          step={c.type === 'number' ? 'any' : undefined}
                           placeholder={c.placeholder}
                           value={value}
-                          onChange={(e) => update(row.id, c.key, e.target.value, c.type)}
+                          onChange={(e) => update(row.id, c.key, e.target.value)}
                         />
                       )}
                     </td>

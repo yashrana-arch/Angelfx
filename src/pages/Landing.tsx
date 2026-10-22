@@ -45,7 +45,7 @@ const FEATURES = [
 ]
 
 const STEPS = [
-  { n: '01', title: 'Get your account', text: 'Your relationship manager creates your trading account and shares your login.' },
+  { n: '01', title: 'Create your account', text: 'Sign up in minutes to open your trading account.' },
   { n: '02', title: 'Fund via UPI', text: 'Open Deposit, scan the QR and pay from any UPI app.' },
   { n: '03', title: 'Track & grow', text: 'Follow the markets, your trades and your P&L in real time.' },
 ]

@@ -87,7 +87,7 @@ export default function ProofReviewRow({
             </button>
             <DeleteButton busy={busy} onClick={handleDelete} />
           </div>
-          <span className="hint">Approving doesn’t add funds. Credit the amount on the client’s Ledger tab.</span>
+          <span className="hint">Approving doesn’t add funds. Once the payment is confirmed, use Add funds on the client’s Portfolio tab.</span>
         </div>
       ) : (
         <div className="row-gap">
