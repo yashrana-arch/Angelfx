@@ -11,6 +11,8 @@ export interface User {
   verified?: boolean
   /** null until the client submits their KYC details. */
   kycStatus?: KycStatus | null
+  /** Disabled by the admin: can't log in, and the email / phone can't be used to sign up again. */
+  disabled?: boolean
 }
 
 /* ---------- Payment proofs (deposit screenshots) ---------- */

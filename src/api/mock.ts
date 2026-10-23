@@ -174,13 +174,13 @@ function save(db: DB) {
 
 const delay = <T>(value: T) => new Promise<T>((r) => setTimeout(() => r(value), 200))
 const uid = () => Math.random().toString(36).slice(2, 10)
-const publicUser = ({ id, name, email, phone, role, clientCode, verified, kycStatus }: StoredUser): User => ({
-  id, name, email, phone, role, clientCode, verified, kycStatus: kycStatus ?? null,
+const publicUser = ({ id, name, email, phone, role, clientCode, verified, kycStatus, disabled }: StoredUser): User => ({
+  id, name, email, phone, role, clientCode, verified, kycStatus: kycStatus ?? null, disabled: !!disabled,
 })
 
 function currentUser(db: DB, role?: Role): StoredUser {
   const token = tokenStore.get()
-  const user = db.users.find((u) => token === `mock:${u.id}`)
+  const user = db.users.find((u) => token === `mock:${u.id}` && !u.disabled)
   if (!user) throw new ApiError(401, 'Not authenticated')
   if (role && user.role !== role) throw new ApiError(403, 'Forbidden')
   return user
@@ -258,10 +258,15 @@ export const mockApi: Api = {
         (u) => (u.email.toLowerCase() === id || u.clientCode?.toLowerCase() === id) && u.password === password,
       )
       if (!user) throw new ApiError(401, 'Invalid credentials')
+      if (user.disabled) throw new ApiError(401, "This account doesn't exist")
       return delay({ token: `mock:${user.id}`, user: publicUser(user) })
     },
     async register(input) {
       const db = load()
+      const phone = input.phone?.trim()
+      if (db.users.some((u) => u.disabled && (u.email.toLowerCase() === input.email.toLowerCase() || (phone && u.phone?.trim() === phone)))) {
+        throw new ApiError(409, "This email or phone number can't be used")
+      }
       if (db.users.some((u) => u.email.toLowerCase() === input.email.toLowerCase())) {
         throw new ApiError(409, 'A user with this email already exists')
       }
@@ -443,6 +448,13 @@ export const mockApi: Api = {
       const { password, ...rest } = input
       Object.assign(user, rest)
       if (password) user.password = password
+      save(db)
+      return delay(publicUser(user))
+    },
+    async setUserDisabled(userId, disabled) {
+      const db = load()
+      const user = getClient(db, userId)
+      user.disabled = disabled
       save(db)
       return delay(publicUser(user))
     },

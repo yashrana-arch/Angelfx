@@ -109,7 +109,11 @@ export default function Clients() {
                       <span className={`chip ${kycBadge(u.kycStatus).chip}`}>{kycBadge(u.kycStatus).label}</span>
                     </td>
                     <td>
-                      <span className={`chip ${u.verified ? 'chip-up' : 'chip-warn'}`}>{u.verified ? 'Verified' : 'Pending'}</span>
+                      {u.disabled ? (
+                        <span className="chip chip-down">Disabled</span>
+                      ) : (
+                        <span className={`chip ${u.verified ? 'chip-up' : 'chip-warn'}`}>{u.verified ? 'Verified' : 'Pending'}</span>
+                      )}
                     </td>
                     <td className="cell-actions">
                       <Link to={`/admin/users/${u.id}`} className="btn btn-ghost btn-sm">

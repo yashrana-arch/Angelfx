@@ -108,6 +108,8 @@ export const backendApi = {
       request<User>('/admin/users', { method: 'POST', body: input }),
     updateUser: (userId: string, input: ClientUpdate) =>
       request<User>(`/admin/users/${userId}`, { method: 'PUT', body: input }),
+    setUserDisabled: (userId: string, disabled: boolean) =>
+      request<User>(`/admin/users/${userId}/status`, { method: 'PUT', body: { disabled } }),
 
     // Support inbox
     listSupportConversations: () => request<SupportConversation[]>('/admin/support/conversations'),
